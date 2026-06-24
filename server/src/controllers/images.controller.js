@@ -1,9 +1,9 @@
-// const uploadFile = require('')
+const uploadFile = require('../services/s3.service')
 async function imageUploadController(req,res){
     try{
         await uploadFile({
             file: req.file,
-            userId: req.userId 
+            userId: req.body.userId 
         })
      res.send("file sent to the service")
     }
@@ -11,5 +11,6 @@ async function imageUploadController(req,res){
         console.log(error)
     }
 }
+
 
 module.exports=imageUploadController

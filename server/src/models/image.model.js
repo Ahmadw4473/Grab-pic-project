@@ -6,6 +6,6 @@ const imageSchema=new mongoose.Schema({
     orignalName: String
 })
 
-const imageModel=mongoose.model("images",imageSchema)
+const imageModel=mongoose.model("image",imageSchema)
 
 module.exports=imageModel

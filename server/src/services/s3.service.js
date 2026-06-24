@@ -1,32 +1,40 @@
-/** Uploading file to S3 and saving the file and file url in users document **/
-
+const AWS = require('aws-sdk');
 const imageModel = require('../models/image.model')
 
-//body: { file: Buffer, userId: string }
   async function uploadFile(body) {
-    /** Generates a 4 digit random integer */
+    try{
     const generateRandomNumber = Math.floor(1000 + Math.random() * 9000);
     const fileContent = Buffer.from(body.file.buffer);
 
-    /** Uploading the file to S3 Bucket */
-    const s3 = new AWS.S3();
+    const s3 = new AWS.S3({
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY,
+      secretAccessKey: process.env.AWS_SECRET_KEY,
+    });
+    
     const uploadResult = await s3.upload({
       Bucket: process.env.S3_BUCKET_NAME,
       Body: fileContent,
-      Key: `${generateRandomNumber}-${body.userId['userId']}-${body.file['originalname']}`,
+      Key: `${generateRandomNumber}-${body.userId}-${body.file.originalname}`,
     }).promise() 
     
 
-    imageModel.create({
-        userid: body.userId['userId'],
-        orignalName: body.file['orignalname'],
+    try{
+    await imageModel.create({
+        userid: body.userId,
+        orignalName: body.file.originalname,
         imageUrl: uploadResult.Location,
     })
+     console.log("document created")
+    }catch(error){
+        console.log("Document not created",error);
+    }
 
-    /** It returns the file key (file name) and file location */
-    /** Updating the user document by id - setting s3 file url */
-    // return this.userModel.findByIdAndUpdate(body.userId['userId'], {
-    //   fileUrl: uploadResult.Location,
-    // })
+
+    }
+    catch(error){
+        console.log("s3 service error ",error)
+    }
+    
   }
-  modules.exports=uploadFile
+  module.exports=uploadFile
