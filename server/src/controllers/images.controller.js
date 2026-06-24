@@ -1,7 +1,11 @@
-
-function imageUploadController(req,res){
+// const uploadFile = require('')
+async function imageUploadController(req,res){
     try{
-    res.send(req.file)
+        await uploadFile({
+            file: req.file,
+            userId: req.userId 
+        })
+     res.send("file sent to the service")
     }
     catch(error){
         console.log(error)

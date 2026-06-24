@@ -16,7 +16,8 @@
     
     /** It returns the file key (file name) and file location */
     /** Updating the user document by id - setting s3 file url */
-    return this.userModel.findByIdAndUpdate(body.userId['userId'], {
-      fileUrl: uploadResult.Location,
-    })
+    // return this.userModel.findByIdAndUpdate(body.userId['userId'], {
+    //   fileUrl: uploadResult.Location,
+    // })
   }
+  modules.exports=uploadFile
