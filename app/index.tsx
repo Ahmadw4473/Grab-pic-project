@@ -1,7 +1,6 @@
-import { StyleSheet, Text, View, Button, Pressable, Alert, Image } from 'react-native'
-import React, { useState } from 'react'
+import { StyleSheet, Text, View, Button, Pressable, Alert, Image, ScrollView } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import * as ImagePicker from 'expo-image-picker'
-import { Assets } from '@react-navigation/elements';
 
 const index = () => {
 
@@ -29,23 +28,45 @@ const index = () => {
       setImage((prev: any) => {
         return [...prev, ...uris]
       });
+      uploadImageToCloud(image.assets);
     }
 
   }
 
+  async function uploadImageToCloud(image: any) {
+    const formData = new FormData();
+    formData.append('userId', '1234')
+    image.forEach((file: any) => {
+      formData.append('image', {
+        uri: file.uri,
+        name: file.fileName || 'upload.jpg',
+        type: file.mimeType || 'image/jpeg',
+      } as any);
+    });
+    const response = await fetch('http://192.168.10.6:3000/api/images/upload', {
+      method: 'POST',
+      body: formData
+
+    })
+    console.log('image uploaded')
+
+  }
+
   return (
-    <View>
-      <Button title='upload' onPress={pickImage}></Button>
-      {
+    <ScrollView>
+      <View>
+        <Button title='upload' onPress={pickImage}></Button>
+        {
 
-        image.map((images: any, index: number) => (
-          <View key={index}>
-            <Image style={styles.image} source={{ uri: images.uri }} />
-          </View>
-        ))
-      }
+          image.map((images: any, index: number) => (
+            <View key={index}>
+              <Image style={styles.image} source={{ uri: images.uri }} />
+            </View>
+          ))
+        }
 
-    </View>
+      </View>
+    </ScrollView>
 
   )
 }
