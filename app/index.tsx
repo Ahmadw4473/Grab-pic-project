@@ -1,133 +1,210 @@
-import { StyleSheet, Text, View, Button, Pressable, Alert, Image, ScrollView, TouchableOpacity } from 'react-native'
-import React, { useState, useEffect } from 'react'
-import * as ImagePicker from 'expo-image-picker'
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth, useClerk, useUser } from '@clerk/expo'
+import { useSignIn, useSignUp } from '@clerk/expo/legacy'
+import { useState } from 'react'
+import {
+    ActivityIndicator,
+    Alert,
+    Button,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native'
 
-const index = () => {
+type AuthMode = 'signIn' | 'signUp' | 'verify'
 
-  const [image, setImage] = useState<any>([]);
+export default function MainScreen() {
+    const { isLoaded: isAuthLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false })
+    const { user } = useUser()
+    const { setActive, signOut } = useClerk()
+    const { signIn, isLoaded: isSignInLoaded } = useSignIn()
+    const { signUp, isLoaded: isSignUpLoaded } = useSignUp()
 
-  async function pickImage() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (permission.granted == false) {
-      Alert.alert('Permission denied')
-      return
-    }
+    const [mode, setMode] = useState<AuthMode>('signIn')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [code, setCode] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const image = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      allowsMultipleSelection: true,
-      quality: 1,
-    })
+    const authReady = isAuthLoaded && isSignInLoaded && isSignUpLoaded
 
-    if (!image.canceled && image.assets && image.assets.length > 0) {
-      let uris = image.assets.map((assets) => {
-        return assets
-      })
-      setImage((prev: any) => {
-        return [...prev, ...uris]
-      });
-      uploadImageToCloud(image.assets);
-    }
+    async function handleSignIn() {
+        if (!signIn || !setActive) return
 
-  }
+        setIsSubmitting(true)
+        try {
+            const result = await signIn.create({
+                identifier: email.trim(),
+                password,
+            })
 
-  async function uploadImageToCloud(image: any) {
-    const formData = new FormData();
-    formData.append('userId', '1234')
-    image.forEach((file: any) => {
-      formData.append('image', {
-        uri: file.uri,
-        name: file.fileName || 'upload.jpg',
-        type: file.mimeType || 'image/jpeg',
-      } as any);
-    });
-    const response = await fetch('http://192.168.10.12:3000/api/images/upload', {
-      method: 'POST',
-      body: formData
-
-    })
-    console.log('image uploaded')
-
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <Text style={styles.heading}>Images</Text>
-        <View style={styles.imageContainer}>
-          <View>
-            {
-              image.map((images: any, index: number) => (
-
-                <View key={index}>
-                  <Image style={styles.image} source={{ uri: images.uri }} />
-                </View>
-              ))
+            if (result.status === 'complete') {
+                await setActive({ session: result.createdSessionId })
+            } else {
+                Alert.alert('Sign in needs another step', result.status ?? 'Unknown status')
             }
-          </View>
-          <View style={styles.btnContainer}>
-            <TouchableOpacity onPress={pickImage} style={styles.button}>
-              <Text style={styles.text}>upload</Text>
-            </TouchableOpacity>
-          </View>
+        } catch (error: any) {
+            Alert.alert('Sign in failed', getClerkError(error))
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
-        </View>
-      </ScrollView>
-    </SafeAreaView >
+    async function handleSignUp() {
+        if (!signUp) return
 
-  )
+        setIsSubmitting(true)
+        try {
+            await signUp.create({
+                emailAddress: email.trim(),
+                password,
+            })
+
+            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+            setMode('verify')
+        } catch (error: any) {
+            Alert.alert('Sign up failed', getClerkError(error))
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    async function handleVerify() {
+        if (!signUp || !setActive) return
+
+        setIsSubmitting(true)
+        try {
+            const result = await signUp.attemptEmailAddressVerification({ code: code.trim() })
+
+            if (result.status === 'complete') {
+                await setActive({ session: result.createdSessionId })
+            } else {
+                Alert.alert('Verification needs another step', result.status ?? 'Unknown status')
+            }
+        } catch (error: any) {
+            Alert.alert('Verification failed', getClerkError(error))
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    if (!authReady) {
+        return (
+            <View style={styles.centered}>
+                <ActivityIndicator size="large" />
+            </View>
+        )
+    }
+
+    if (isSignedIn) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>Signed in</Text>
+                <Text style={styles.subtitle}>{user?.primaryEmailAddress?.emailAddress}</Text>
+                <View style={styles.buttonRow}>
+                    <Button title="Sign out" onPress={() => signOut()} />
+                </View>
+            </View>
+        )
+    }
+
+    return (
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.container}
+        >
+            <Text style={styles.title}>
+                {mode === 'signIn' ? 'Sign in' : mode === 'signUp' ? 'Create account' : 'Verify email'}
+            </Text>
+
+            {mode !== 'verify' ? (
+                <>
+                    <TextInput
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        keyboardType="email-address"
+                        onChangeText={setEmail}
+                        placeholder="Email"
+                        style={styles.input}
+                        value={email}
+                    />
+                    <TextInput
+                        onChangeText={setPassword}
+                        placeholder="Password"
+                        secureTextEntry
+                        style={styles.input}
+                        value={password}
+                    />
+                    <View style={styles.buttonRow}>
+                        <Button
+                            disabled={isSubmitting}
+                            title={mode === 'signIn' ? 'Sign in' : 'Sign up'}
+                            onPress={mode === 'signIn' ? handleSignIn : handleSignUp}
+                        />
+                    </View>
+                    <Button
+                        title={mode === 'signIn' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
+                        onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')}
+                    />
+                </>
+            ) : (
+                <>
+                    <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
+                    <TextInput
+                        keyboardType="number-pad"
+                        onChangeText={setCode}
+                        placeholder="Verification code"
+                        style={styles.input}
+                        value={code}
+                    />
+                    <View style={styles.buttonRow}>
+                        <Button disabled={isSubmitting} title="Verify" onPress={handleVerify} />
+                    </View>
+                    <Button title="Back" onPress={() => setMode('signUp')} />
+                </>
+            )}
+        </KeyboardAvoidingView>
+    )
 }
 
-export default index
+function getClerkError(error: any) {
+    return error?.errors?.[0]?.longMessage || error?.errors?.[0]?.message || error?.message || 'Something went wrong'
+}
 
 const styles = StyleSheet.create({
-  imageContainer:{
-    height: 1000,
-    // width: '100%'
-    padding: 20
-  },
-  btnContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-  },
-  heading: {
-    color: 'black',
-    fontWeight: 'bold',
-    fontSize: 25,
-    margin: 20,
-    marginVertical:0
-  },
-  bottomContainer: {
-
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    paddingTop: 8,
-    backgroundColor: '#F7F7F9', // Matches screen background so content hides cleanly behind it
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'space-between',
-
-  },
-  image: {
-    height: 150,
-    width: 150
-  },
-  button: {
-    width: '90%',
-    paddingVertical: 16, // Matches the comfortable mobile tap height
-    borderRadius: 12,    // Smoothly rounded corners
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'blue'
-  },
-  text: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16
-  },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: 24,
+        gap: 12,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#111827',
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 15,
+        color: '#4b5563',
+        textAlign: 'center',
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        fontSize: 16,
+    },
+    buttonRow: {
+        marginTop: 4,
+    },
 })
