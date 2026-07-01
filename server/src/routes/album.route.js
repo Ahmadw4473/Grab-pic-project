@@ -1,8 +1,9 @@
-const express=require('express')
-const createAlbumControlelr=require('../controllers/album.controller')
-const router=express.Router()
+const express = require('express')
+const { createAlbum, getAlbums } = require('../controllers/album.controller')
+const router = express.Router()
 
 
-router.post('/createAlbum',createAlbumControlelr)
+router.post('/createAlbum', createAlbum)
+router.get('/getAlbums', getAlbums)
 
-module.exports=router
+module.exports = router

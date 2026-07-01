@@ -1,11 +1,22 @@
 import { StyleSheet, Text, View, Alert, Image, ScrollView, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import * as ImagePicker from 'expo-image-picker'
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 
 const UploadScreen = () => {
 
+  type fetchedImages = {
+    _id: string,
+    imageUrl: string,
+    userid: string,
+    orignalName: string,
+    albumName: string
+  }
+
+  const { albumId } = useLocalSearchParams()
   const [image, setImage] = useState<any>([]);
+  const [fetchedImages, setFetchedImages] = useState<fetchedImages[]>([])
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -35,6 +46,7 @@ const UploadScreen = () => {
   async function uploadImageToCloud(image: any) {
     const formData = new FormData();
     formData.append('userId', '1234')
+    formData.append('albumId', `${albumId}`)
     image.forEach((file: any) => {
       formData.append('image', {
         uri: file.uri,
@@ -42,14 +54,34 @@ const UploadScreen = () => {
         type: file.mimeType || 'image/jpeg',
       } as any);
     });
-    const response = await fetch('http://192.168.10.12:3000/api/images/upload', {
+    const response = await fetch('http://192.168.10.5:3000/api/images/upload', {
       method: 'POST',
       body: formData
 
     })
     console.log('image uploaded', await response.text())
 
+    fetchImages()
+
   }
+
+  async function fetchImages() {
+    const response = await fetch('http://192.168.10.5:3000/api/images/getImages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ albumId })
+    })
+
+    const data = await response.json()
+    setFetchedImages(data)
+
+  }
+
+  useEffect(() => {
+    fetchImages()
+  }, [])
 
   return (
     <SafeAreaView style={styles.container}>
@@ -58,10 +90,10 @@ const UploadScreen = () => {
         <View style={styles.imageContainer}>
           <View>
             {
-              image.map((images: any, index: number) => (
+              fetchedImages.map((image) => (
 
-                <View key={index}>
-                  <Image style={styles.image} source={{ uri: images.uri }} />
+                <View key={image._id}>
+                  <Image style={styles.image} source={{ uri: image.imageUrl }} />
                 </View>
               ))
             }
@@ -73,7 +105,7 @@ const UploadScreen = () => {
           </View>
 
         </View>
-        
+
       </ScrollView>
     </SafeAreaView >
 
@@ -83,7 +115,7 @@ const UploadScreen = () => {
 export default UploadScreen
 
 const styles = StyleSheet.create({
-  imageContainer:{
+  imageContainer: {
     height: 1000,
     // width: '100%'
     padding: 20
@@ -100,7 +132,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 25,
     margin: 20,
-    marginVertical:0
+    marginVertical: 0
   },
   bottomContainer: {
 

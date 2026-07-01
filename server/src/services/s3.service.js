@@ -18,6 +18,7 @@ async function uploadFile(body) {
                 Bucket: process.env.S3_BUCKET_NAME,
                 Body: fileContent,
                 Key: `${generateRandomNumber}-${body.userId}-${body.file[i].originalname}`,
+        
             }).promise()
 
 
@@ -26,6 +27,7 @@ async function uploadFile(body) {
                     userid: body.userId,
                     orignalName: body.file[i].originalname,
                     imageUrl: uploadResult.Location,
+                    albumId: body.albumId
                 })
                 console.log("document created")
             } catch (error) {

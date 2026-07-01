@@ -1,40 +1,64 @@
-import { StyleSheet, Text, View, TouchableOpacity, Pressable, Modal, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native'
-import React, { useState } from 'react'
-import UploadScreen from './uploadScreen'
+import { StyleSheet, Text, View, TouchableOpacity, Pressable, Modal, TextInput, TouchableWithoutFeedback, KeyboardAvoidingView, ScrollView } from 'react-native'
+import React, { useEffect, useState } from 'react'
+// import UploadScreen from './uploadScreen/[uploadScreen]'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
+import { useRouter } from 'expo-router'
 
 const createAlbum = () => {
+  const router=useRouter()
+  type Album = {
+    _id: string,
+    albumName: string,
+    userId: string
+
+  }
   const [modalVisible, setModelVisible] = useState(false)
-  const [albumName, setAlbumName] = useState('')
-  const [albums, addAlbums] = useState([])
+  const [albumNameState, setAlbumNameState] = useState('')
+  const [albums, addAlbums] = useState<Album[]>([])
 
   async function albumToBackend() {
     setModelVisible(false)
-    const response = await fetch('http://192.168.10.6:3000/api/Albums/createAlbum', {
+    const response = await fetch('http://192.168.10.5:3000/api/Albums/createAlbum', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: albumName,
+        name: albumNameState,
         userId: '1234'
       })
-
     })
+    fetchAlbums()
   }
 
+  async function fetchAlbums() {
+    try {
+      const response = await fetch('http://192.168.10.5:3000/api/Albums/getAlbums', {
+        method: 'GET'
+      })
+      let data = await response.json()
+      addAlbums(data)
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchAlbums()
+  }, [])
 
   return (
     <SafeAreaView>
-      <View>
+      <ScrollView>
         <KeyboardAvoidingView>
           <Modal visible={modalVisible} transparent animationType='fade'>
 
-            <TouchableOpacity onPress={() => setModelVisible(false)} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.1)' }}>
+            <Pressable onPress={() => setModelVisible(false)} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.1)' }}>
               <Text style={styles.modalTitle}>Create album</Text>
 
-              <TextInput placeholder='Enter Album Name...' style={styles.modalInput} onChangeText={(text) => setAlbumName(text)} ></TextInput>
+              <TextInput placeholder='Enter Album Name...' style={styles.modalInput} onChangeText={(text) => setAlbumNameState(text)} ></TextInput>
               <View style={styles.modalActions}>
 
                 <Pressable style={styles.modalButton} onPress={() => setModelVisible(false)}>
@@ -45,15 +69,31 @@ const createAlbum = () => {
                 </Pressable>
 
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </Modal>
         </KeyboardAvoidingView>
-        <TouchableOpacity onPress={() => setModelVisible(true)}>
 
+        {
+          albums.map((album) => (
+
+            <Pressable key={album._id} onPress={()=>router.push({
+              pathname: '/uploadScreen/[albumId]',
+              params:{
+                albumId:album._id
+              }
+            })}>
+              <View style={{ width: 60, height: 60, margin: 20 }}>
+                <Text> {album.albumName}</Text>
+              </View>
+            </Pressable>
+          ))
+        }
+
+        <TouchableOpacity onPress={() => setModelVisible(true)}>
           <Text>create album</Text>
         </TouchableOpacity>
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   )
 }
