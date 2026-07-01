@@ -2,11 +2,28 @@ import { StyleSheet, Text, View, TouchableOpacity, Pressable, Modal, TextInput, 
 import React, { useState } from 'react'
 import UploadScreen from './uploadScreen'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useLocalSearchParams } from 'expo-router'
 
 const createAlbum = () => {
   const [modalVisible, setModelVisible] = useState(false)
+  const [albumName, setAlbumName] = useState('')
+  const [albums, addAlbums] = useState([])
 
-  let albums = []
+  async function albumToBackend() {
+    setModelVisible(false)
+    const response = await fetch('http://192.168.10.6:3000/api/Albums/createAlbum', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: albumName,
+        userId: '1234'
+      })
+
+    })
+  }
+
 
   return (
     <SafeAreaView>
@@ -15,19 +32,18 @@ const createAlbum = () => {
           <Modal visible={modalVisible} transparent animationType='fade'>
 
             <TouchableOpacity onPress={() => setModelVisible(false)} style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.1)' }}>
+              <Text style={styles.modalTitle}>Create album</Text>
 
-              <View style={styles.modalContainer}>
-                <View style={styles.modalHandle} />
-                <Text style={styles.modalTitle}>Create album</Text>
-                <TextInput placeholder='Enter Album Name...' style={styles.modalInput}></TextInput>
-                <View style={styles.modalActions}>
-                  <Pressable style={styles.modalButton}>
-                    <Text style={styles.modalPrimaryText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable style={styles.modalButton}>
-                    <Text style={styles.modalPrimaryText}>Submit</Text>
-                  </Pressable>
-                </View>
+              <TextInput placeholder='Enter Album Name...' style={styles.modalInput} onChangeText={(text) => setAlbumName(text)} ></TextInput>
+              <View style={styles.modalActions}>
+
+                <Pressable style={styles.modalButton} onPress={() => setModelVisible(false)}>
+                  <Text style={styles.modalPrimaryText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.modalButton} onPress={albumToBackend}>
+                  <Text style={styles.modalPrimaryText}>Submit</Text>
+                </Pressable>
+
               </View>
             </TouchableOpacity>
           </Modal>
