@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router'
 
 const createAlbum = () => {
   const router = useRouter()
+  const { userId } = useLocalSearchParams()
   type Album = {
     _id: string,
     albumName: string,
@@ -18,7 +19,7 @@ const createAlbum = () => {
   const [albumNameState, setAlbumNameState] = useState('')
   const [albums, addAlbums] = useState<Album[]>([])
   const [joiningCode, setJoiningCode] = useState('')
-  const [joining, setJoining] = useState(false)
+  // const [joining, setJoining] = useState(false)
 
   async function albumToBackend() {
     setModelVisible(false)
@@ -29,7 +30,7 @@ const createAlbum = () => {
       },
       body: JSON.stringify({
         name: albumNameState,
-        userId: '1234',
+        userId: userId,
         joinCode: 'abc123'
       })
     })

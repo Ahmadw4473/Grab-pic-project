@@ -1,9 +1,10 @@
 import { useAuth } from '@clerk/expo'
 import { Redirect } from 'expo-router'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-
+import { useUser } from '@clerk/expo'
 export default function MainScreen() {
     const { isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false })
+    const { user } = useUser()
 
     if (!isLoaded) {
         return (
@@ -12,8 +13,19 @@ export default function MainScreen() {
             </View>
         )
     }
-
-    return <Redirect href={isSignedIn ? '/createAlbum' : '/(auth)/signIn'} />
+    if (!isSignedIn) {
+        return <Redirect href="/(auth)/signIn" />
+    }
+    return (
+        <Redirect
+            href={{
+                pathname: '/albumScreen/[userId]',
+                params: {
+                    userId: user?.id,
+                },
+            }}
+        />
+    )
 }
 
 const styles = StyleSheet.create({

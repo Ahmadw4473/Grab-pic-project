@@ -1,4 +1,4 @@
-import { useAuth, useClerk } from '@clerk/expo'
+import { useAuth, useClerk, useUser } from '@clerk/expo'
 import { useSignIn } from '@clerk/expo/legacy'
 import { Redirect, useRouter } from 'expo-router'
 import React, { useState } from 'react'
@@ -15,6 +15,7 @@ import {
 } from 'react-native'
 
 const SignIn = () => {
+    const { user } = useUser()
     const router = useRouter()
     const { isLoaded: isAuthLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false })
     const { setActive } = useClerk()
@@ -64,7 +65,12 @@ const SignIn = () => {
     }
 
     if (isSignedIn) {
-        return <Redirect href="/createAlbum" />
+        return <Redirect href={{
+            pathname: '/albumScreen/[userId]',
+            params: {
+                userId: user?.id
+            }
+        }} />
     }
 
     return (
