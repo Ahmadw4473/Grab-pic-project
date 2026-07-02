@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 
 const UploadScreen = () => {
+  let ipv4 = "192.168.10.9"
 
   type fetchedImages = {
     _id: string,
@@ -28,7 +29,7 @@ const UploadScreen = () => {
     const image = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
       allowsMultipleSelection: true,
-      quality: 1,
+      quality: 0.5,
     })
 
     if (!image.canceled && image.assets && image.assets.length > 0) {
@@ -40,7 +41,6 @@ const UploadScreen = () => {
       });
       uploadImageToCloud(image.assets);
     }
-
   }
 
   async function uploadImageToCloud(image: any) {
@@ -54,19 +54,19 @@ const UploadScreen = () => {
         type: file.mimeType || 'image/jpeg',
       } as any);
     });
-    const response = await fetch('http://192.168.10.7:3000/api/images/upload', {
+    const response = await fetch(`http://${ipv4}:3000/api/images/upload`, {
       method: 'POST',
       body: formData
 
     })
     console.log('image uploaded', await response.text())
 
-    fetchImages()
+    await fetchImages()
 
   }
 
   async function fetchImages() {
-    const response = await fetch('http://192.168.10.7:3000/api/images/getImages', {
+    const response = await fetch(`http://${ipv4}:3000/api/images/getImages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -80,8 +80,11 @@ const UploadScreen = () => {
   }
 
   useEffect(() => {
-    fetchImages()
-  }, [])
+    if (albumId) {
+      setFetchedImages([])
+      fetchImages()
+    }
+  }, [albumId])
 
   return (
     <SafeAreaView style={styles.container}>

@@ -6,6 +6,7 @@ import { useLocalSearchParams } from 'expo-router'
 import { useRouter } from 'expo-router'
 
 const createAlbum = () => {
+  let ipv4 = "192.168.10.9"
   const router = useRouter()
   const { userId } = useLocalSearchParams()
   type Album = {
@@ -23,7 +24,7 @@ const createAlbum = () => {
 
   async function albumToBackend() {
     setModelVisible(false)
-    const response = await fetch('http://192.168.10.7:3000/api/Albums/createAlbum', {
+    const response = await fetch(`http://${ipv4}:3000/api/Albums/createAlbum`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ const createAlbum = () => {
 
   async function joinAlbum() {
     try {
-      const response = await fetch('http://192.168.10.7:3000/api/Albums/joinAlbum', {
+      const response = await fetch(`http://${ipv4}/api/Albums/joinAlbum`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ const createAlbum = () => {
   async function fetchAlbums() {
     try {
 
-      const response = await fetch(`http://192.168.10.7:3000/api/Albums/getAlbums?userId=${userId}`, {
+      const response = await fetch(`http://${ipv4}:3000/api/Albums/getAlbums?userId=${userId}`, {
         method: 'GET'
       })
       let data = await response.json()
