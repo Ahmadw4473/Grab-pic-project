@@ -54,7 +54,7 @@ const UploadScreen = () => {
         type: file.mimeType || 'image/jpeg',
       } as any);
     });
-    const response = await fetch('http://192.168.10.5:3000/api/images/upload', {
+    const response = await fetch('http://192.168.10.7:3000/api/images/upload', {
       method: 'POST',
       body: formData
 
@@ -66,7 +66,7 @@ const UploadScreen = () => {
   }
 
   async function fetchImages() {
-    const response = await fetch('http://192.168.10.5:3000/api/images/getImages', {
+    const response = await fetch('http://192.168.10.7:3000/api/images/getImages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -6,7 +6,8 @@ async function createAlbum(req, res) {
         console.log(req.body)
         albumModel.create({
             albumName: req.body.name,
-            userId: req.body.userId
+            userId: req.body.userId,
+            joiningCode: req.body.joinCode
         })
         res.status(201).send({ message: 'album created' })
     }
@@ -21,4 +22,9 @@ async function getAlbums(req, res) {
     res.json(albums)
 }
 
-module.exports = { createAlbum, getAlbums }
+async function joinAlbum(req, res) {
+    const album = await albumModel.findOne({ joiningCode: req.body.joinCode })
+    res.json(album)
+}
+
+module.exports = { createAlbum, getAlbums, joinAlbum }
