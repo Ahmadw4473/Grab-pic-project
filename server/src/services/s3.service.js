@@ -27,7 +27,7 @@ async function uploadFile(body) {
                     userid: body.userId,
                     orignalName: body.file[i].originalname,
                     imageUrl: uploadResult.Location,
-                    albumId: body.albumId
+                    albumId: body.albumId,
                 })
                 console.log("document created")
             } catch (error) {

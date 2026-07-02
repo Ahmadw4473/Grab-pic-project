@@ -31,7 +31,7 @@ const createAlbum = () => {
       body: JSON.stringify({
         name: albumNameState,
         userId: userId,
-        joinCode: 'abc123'
+        joinCode: 'abc123',
       })
     })
     fetchAlbums()
@@ -45,15 +45,12 @@ const createAlbum = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userId: userId,
           joinCode: joiningCode
         })
 
       })
-      const data = await response.json()
-      if (data) {
-        addAlbums((prev) => { return [...prev, data] })
-      }
-
+      fetchAlbums()
     }
     catch (error) {
       console.log(error)
@@ -62,7 +59,7 @@ const createAlbum = () => {
   async function fetchAlbums() {
     try {
 
-      const response = await fetch('http://192.168.10.7:3000/api/Albums/getAlbums', {
+      const response = await fetch(`http://192.168.10.7:3000/api/Albums/getAlbums?userId=${userId}`, {
         method: 'GET'
       })
       let data = await response.json()
